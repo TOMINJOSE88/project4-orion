@@ -1,18 +1,13 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
-import shutil
-import os
+import backend.routes.metrics_store as store
 
 router = APIRouter()
 
-UPLOAD_DIR = "uploaded_files"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-@router.post("/upload/")
+@router.post("/api/v1/upload")
 async def upload_file(file: UploadFile = File(...)):
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
     try:
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        return {"filename": file.filename, "path": file_path}
+        contents = await file.read()
+        store.metrics_store["uploaded_files"].append(file.filename)
+        return {"status": "success", "filename": file.filename}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
